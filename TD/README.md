@@ -1,7 +1,6 @@
 # TD
 
 
-Objectifs :
 
 **Partie 1 - IAAS**
 
