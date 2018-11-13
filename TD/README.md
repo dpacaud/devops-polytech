@@ -113,7 +113,6 @@ php_value[soap.wsdl_cache_dir]  = /var/lib/php/7.2/wsdlcache
 **Partie 3 - Terraform**
 1. Installer terraform
     * https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
-    * 
 2. Création d'un VPC + Subnets + routage avec TF
 3. Création des sécurity groups
 4. Création d'une base RDS
