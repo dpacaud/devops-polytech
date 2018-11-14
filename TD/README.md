@@ -1,6 +1,6 @@
 # TD
 
-
+##Week 1
 
 **Partie 1 - IAAS**
 
@@ -117,6 +117,11 @@ php_value[soap.wsdl_cache_dir]  = /var/lib/php/7.2/wsdlcache
 3. Création des sécurity groups
 4. Création d'une base RDS
 5. Création d'une instance ec2
+6. Installation de nginx, php et Phpmyadmin sur cette instance
+
+
+
+## Week 2
 
 **Partie 4 - Ansible**
 
