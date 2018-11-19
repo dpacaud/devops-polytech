@@ -1,0 +1,259 @@
+Création de compte AWS
+
+http://aws.amazon.com
+
+=> si l’étape de vérification ne fonctionne pas, contactez le support
+
+Services-> IAM 
+
+Copier le sign-in link
+
+https://981121623188.signin.aws.amazon.com/console
+
+Services -> IAM -> Users -> Add User
+
+Access type : Programmatic access
+
+Select : “Attach existing policies directly”
+
+Choose policy “AdministratorAccess”
+
+Hit download .csv
+
+Open CSV
+
+Create a file at ~/.aws/credentials
+
+Fill it with : 
+
+[default]
+aws_access_key_id = AKIAIPQTACYOURKEYID
+aws_secret_access_key = ok0UtYOURSECRETKEY
+
+Create a file at ~/.aws/config
+
+Fill it with :
+
+[profile default]
+output = json
+region = eu-west-3
+
+Got to “billing dashboard” => credits
+Enter your 50$ coupon code
+
+Démarrer une instance sur AWS :
+
+Choisir la distribution Amazon Linux AMI 2018.03.0
+
+Choisir une instance du free tier (t2.micro)
+
+Choisir les éléments par défaut
+
+Créer une nouvelle Key-Pair et la download
+
+Déplacer le fichier .pem dans ~/.ssh/
+
+Se connecter à l’instance avec cette clé ssh et le username ‘ec2-user’
+
+Mettre à jour les packages
+    sudo yum update
+
+Ajouter l'auto-complete bash avec 
+    sudo yum install bash-completion --enablerepo=epel
+
+Ajouter l’auto-complétion à la commande aws
+
+complete -C '/usr/local/bin/aws_completer' aws
+
+Copier vos fichiers ~/.aws/config et ~/.aws/credentials sur l’instance
+
+Vérifier que tout fonctionne avec la commande
+
+    aws ec2 describe-instances
+
+Vous devez avoir un résultat json qui contient votre instance
+
+==================================================
+Installation de nginx et php7
+
+sudo yum install nginx php72 php72-fpm php72-mysqlnd
+
+Démarrer nginx
+
+sudo service nginx start
+
+Tester si nginx répond bien sur http://ip.de.votre.instance/
+
+Créer un security group autorisant l’accès en inbound au ports du protocole http et https.
+Ajouter ce security group à l’instance
+
+
+
+==================================================
+Installation de mysql
+
+    sudo yum install mysql57-server
+
+Démarrer le service mysql
+
+    sudo service mysqld start
+
+Se connecter en tant que root 
+    
+    sudo -i
+
+Se connecter à mysql
+
+    mysql
+
+Exécuter ces commandes sql 
+    create user 'admin' identified by 'unpasswordsuperlongettressecure';
+    grant all privileges on *.*  to 'admin'@'%';
+    flush privileges;
+
+
+==================================================
+Installation de phpmyadmin
+
+Download https://files.phpmyadmin.net/phpMyAdmin/4.8.3/phpMyAdmin-4.8.3-all-languages.tar.gz
+
+    tar xvzf phpMyAdmin-4.8.3-all-languages.tar.gz
+    mv phpMyAdmin-4.8.3-all-languages phpmyadmin
+    mv phpmyadmin /var/www/html/
+
+==================================================
+Mise à jour de la configuration de nginx et php-fpm
+
+    sudo nano /etc/nginx/nginx.conf
+
+----------------------------
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /var/run/nginx.pid;
+include /usr/share/nginx/modules/*.conf;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 2048;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    include /etc/nginx/conf.d/*.conf;
+
+    index   index.php index.html index.htm;
+
+    server {
+        location /phpmyadmin {
+               root /var/www/html;
+               index index.php index.html index.htm;
+               location ~ ^/phpmyadmin/(.+\.php)$ {
+                       try_files $uri =404;
+                       root /var/www/html;
+                       fastcgi_pass   unix:/var/run/php-fpm/php-fpm.sock;
+                        fastcgi_index  index.php;
+                        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+                        include        fastcgi_params;
+               }
+               location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
+                       root /var/www/html;
+               }
+        }
+        location /pma {
+               rewrite ^/* /phpmyadmin last;
+        }
+    }
+}
+----------------------------
+
+    sudo nano /etc/php-fpm.d/www.conf
+
+----------------------------
+[www]
+user = nginx
+group = nginx
+listen = /var/run/php-fpm/php-fpm.sock
+listen.acl_users = apache,nginx
+listen.allowed_clients = 127.0.0.1
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
+slowlog = /var/log/php-fpm/7.2/www-slow.log
+php_admin_value[error_log] = /var/log/php-fpm/7.2/www-error.log
+php_admin_flag[log_errors] = on
+php_value[session.save_handler] = files
+php_value[session.save_path]    = /tmp/
+php_value[soap.wsdl_cache_dir]  = /var/lib/php/7.2/wsdlcache
+----------------------------
+
+==================================================
+restart nginx and php-fpm
+
+    sudo service php-fpm restart
+    sudo service nginx restart
+
+==================================================
+Vérifier que la page d'acceuil de phpMyadmin est bien disponible
+http://ip.de.votre.instance/pma
+
+
+
+==================================================
+Création de base de données RDS via la console AWS
+
+Aller dans le service RDS
+choisir Mysql puis production - Mysql
+Choisir la version 5.7.23
+choisir l'instance class `db.t2.micro` /!\ important sinon vous risquer de payer
+Choisir Multi-AZ deployment : NO  /!\ important sinon vous risquer de payer
+Choisir Storage type : General Purpose (SSD) /!\ important sinon vous risquer de payer
+Choisir un nom pour le serveur de bdd
+Master username : admin
+Master password : unpasswordsuperlongettressecure
+Laisser le reste par défaut à l'exception de 
+- "Backup" : 
+Backup retention period : 0 days
+- Monitoring :
+Disable enhanced monitoring
+- Deletion protection :
+Décocher "Enable deletion protection"
+
+La création de la base de données prend quelques minutes
+===========================================================================
+
+Connecter phpmyadmin sur cette base de données
+
+===========================================================================
+Installer Terraform :
+
+  wget https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
+  unzip terraform_0.11.10_linux_amd64.zip
+  sudo mv terraform /usr/bin/
+
+
+
+Faire la même chose avec Terraform
+Il faut créer :
+- un VPC
+- un subnet
+- une instance dans ce VPC
+- une base de données RDS
+
+
+
