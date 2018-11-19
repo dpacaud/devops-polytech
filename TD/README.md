@@ -125,20 +125,21 @@ php_value[soap.wsdl_cache_dir]  = /var/lib/php/7.2/wsdlcache
 
 **Partie 4 - Ansible**
 
-1. Provisionning de l'instance ec2 terraformée 
-2. Nginx
-3. php 
-4. phpMyAdmin
+1. Setup ansible vers l'instance terraformée 
+    * OSX : `brew install ansible`
+
+2. Provisionning de l'instance ec2 terraformée via un playbook
+    * Un rôle par composant à installer
+
+3. Installation et configuration de Nginx
+4. Installation et configuration de php 
+5. Installation et configuration de phpMyAdmin
 
 **Partie 5 - Monitoring**
 
-1. Installation d'un serveur Prometheus
-2. ansible + terraform
-
-**Partie 6 - CI/CD**
-
-1. Installation d'un serveur Jenkins
-2. ansible + terraform
+1. Installation d'un serveur Prometheus avec ansible + terraform
+2. Monitoring de l'instance Prometheus avec node_exporter
+3. Monitoring de l'instance phpmyadmin avec node_exporter
 
 
 
